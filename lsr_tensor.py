@@ -1,3 +1,8 @@
+import torch
+import tensorly as ten
+import tltorch as tlt
+
+# Class for Low Separation Rank tensor decomposition
 class LSR_tensor(torch.nn.Module):
     def __init__(self, shape, ranks, separation_rank, init_zero=False):
         super(LSR_tensor, self).__init__()
@@ -6,6 +11,7 @@ class LSR_tensor(torch.nn.Module):
         self.separation_rank = separation_rank        
         self.order = len(shape)
 
+        # Initialize core tensor as either zeros or independent standard gaussians
         if init_zero:
             self.core_tensor = torch.nn.parameter.Parameter(torch.zeros(ranks))
         else:
@@ -13,6 +19,7 @@ class LSR_tensor(torch.nn.Module):
 
         self.factor_matrices = torch.nn.ModuleList()
 
+        # Initialize all factor matrices
         for s in range(separation_rank):
             factors_s = torch.nn.ParameterList()
 
@@ -21,11 +28,15 @@ class LSR_tensor(torch.nn.Module):
                     factors_s.append(torch.zeros((shape[k], ranks[k])))
                 else:
                     factor_matrix_A = torch.normal(torch.zeros((shape[k], ranks[k])), torch.ones((shape[k], ranks[k])))
+
+                    # Orthonormalize matrix
                     factor_matrix_B = torch.linalg.qr(factor_matrix_A)[0]
                     factors_s.append(factor_matrix_B)
 
             self.factor_matrices.append(factors_s)
 
+    # Expand core tensor and factor matrices to full tensor, optionally excluding
+    # a given term from the separation rank decomposition
     def expand_to_tensor(self, skip_term=None):
         full_lsr_tensor = 0
 
@@ -37,9 +48,12 @@ class LSR_tensor(torch.nn.Module):
 
         return full_lsr_tensor
 
+    # Regular forward pass
     def forward(self, x):
         return ten.tenalg.inner(x, self.expand_to_tensor(), n_modes=self.order)
 
+    # Absorb all factor matrices and core tensor into the input tensor except for matrix s, k
+    # Used during a factor matrix update step of block coordiante descent
     @torch.no_grad()
     def bcd_factor_update_x(self, s, k, x):
         omega = ten.base.partial_tensor_to_vec(
@@ -47,10 +61,12 @@ class LSR_tensor(torch.nn.Module):
                 (ten.tenalg.kronecker(self.factor_matrices[s], skip_matrix=k, reverse=True) @
                     ten.base.unfold(self.core_tensor, k).T)
                 )
-        gamma = ten.tenalg.inner(x, expand_lsr(self.core_tensor, self.factor_matrices, skip_term=s), n_modes=self.order)
+        gamma = ten.tenalg.inner(x, self.expand_to_tensor(skip_term=s), n_modes=self.order)
         x_combined = torch.cat((omega, torch.unsqueeze(gamma, axis=1)), axis=1)
         return x_combined
 
+    # Absorb all factor matrices the input tensor (not the core tensor)
+    # Used during a core tensor update step of block coordiante descent
     @torch.no_grad()
     def bcd_core_update_x(self, x):
         x_vec = torch.unsqueeze(ten.base.partial_tensor_to_vec(x), axis=2)
@@ -63,16 +79,19 @@ class LSR_tensor(torch.nn.Module):
         x_combined = torch.squeeze(x_combined, axis=2)
         return x_combined
 
+    # Block coordinate descent core tensor update step 
     def bcd_core_forward(self, x):
         x_combined = self.bcd_core_update_x(x)
         core_vec = ten.base.tensor_to_vec(self.core_tensor)
         return ten.tenalg.inner(x_combined, core_vec, n_modes=1)
 
+    # Block coordinate descent factor matrix update step 
     def bcd_factor_forward(self, s, k, x):
         x_combined = self.bcd_factor_update_x(s, k, x)
         factor_expanded = torch.cat((ten.base.tensor_to_vec(self.factor_matrices[s][k]), torch.ones((1))))
         return ten.tenalg.inner(x_combined, factor_expanded, n_modes=1)
 
+    # Orthonormalize the columns of a factor matrix
     @torch.no_grad()
     def orthonorm_factor(self, s, k):
         trash = torch.empty((self.ranks[k], self.ranks[k]))
