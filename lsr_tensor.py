@@ -94,6 +94,7 @@ class LSR_tensor(torch.nn.Module):
     # Orthonormalize the columns of a factor matrix
     @torch.no_grad()
     def orthonorm_factor(self, s, k):
-        trash = torch.empty((self.ranks[k], self.ranks[k]))
-        torch.linalg.qr(self.factor_matrices[s][k], out=(self.factor_matrices[s][k], trash))
+        q, r = torch.linalg.qr(self.factor_matrices[s][k], mode='reduced')
+        r_signs = torch.sign(torch.eye(self.ranks[k]) * r)
+        self.factor_matrices[s][k][:, :self.ranks[k]] = (q @ r_signs)[:, :self.ranks[k]]
 
