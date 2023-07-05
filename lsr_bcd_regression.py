@@ -3,21 +3,27 @@ import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
 def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
-                       threshold=0.01, max_iter=100, init_zero=True, ortho=True, true_param=None,\
+                       threshold=0.01, max_iter=100, init_zero=True, ortho=True, true_param=None, val_dataset=None,\
                        verbose=False, adam=False):
     order = len(shape)
 
     if batch_size is None:
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=len(dataset))
+        batch_size=len(dataset)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
         X, y = next(iter(dataloader))
         dataloader = [(X, y)]
     else:
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
 
+    if val_dataset is not None:
+        val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+
+
     lsr_ten = LSR_tensor(shape, ranks, sep_rank, init_zero=init_zero)
     params = lsr_ten.parameters()
 
     estim_error = []
+    val_losses = []
 
     for iteration in range(max_iter):
         prev = lsr_ten.expand_to_tensor()
@@ -57,16 +63,31 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
                 optimizer.step()
 
         if true_param is not None:
-            error = torch.norm(lsr_ten.expand_to_tensor() - true_param) / torch.norm(true_param)
+            with torch.no_grad():
+                error = torch.norm(lsr_ten.expand_to_tensor() - true_param) / torch.norm(true_param)
+
             estim_error.append(error.detach())
+
+        if val_dataset is not None:
+            val_loss = 0 
+
+            with torch.no_grad():
+                for X, y in val_dataloader:
+                    y_predicted = lsr_ten.forward(X)
+                    val_loss += loss_func(y_predicted, y) * len(X)
+                val_loss /= len(val_dataset)
+
+            val_losses.append(val_loss) 
+
 
         # Stop if the change in the LSR tensor is under the convergence threshold
         diff = torch.norm(lsr_ten.expand_to_tensor() - prev)
         if diff < threshold:
             break
 
-        if verbose and iteration % (max_iter // 50) == 0:
-            print(f"Iteration {iteration} | Delta: {diff}, Training Loss: {loss}")
+        if verbose and iteration % max(1, max_iter // 50) == 0:
+            print(f"Iteration {iteration} | Delta: {diff}, Last Batch Training Loss: {loss}")
 
-    return lsr_ten, estim_error
+    diagnostics = {"estimation_error": estim_error, "val_loss": val_losses}
+    return lsr_ten, diagnostics
 
