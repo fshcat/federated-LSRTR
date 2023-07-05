@@ -3,7 +3,7 @@ import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
 def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
-                       threshold=0.01, max_iter=100, init_zero=True, ortho=True, true_param=None, val_dataset=None,\
+                       threshold=1e-6, max_iter=200, init_zero=False, ortho=True, true_param=None, val_dataset=None,\
                        verbose=False, adam=False):
     order = len(shape)
 
