@@ -35,6 +35,18 @@ class LSR_tensor(torch.nn.Module):
 
             self.factor_matrices.append(factors_s)
 
+    # Create a new LSR_tensor using the parameters from the LSR_tensor provided
+    @classmethod
+    @torch.no_grad()
+    def copy(cls, old_tensor):
+        new_tensor = cls(old_tensor.shape, old_tensor.ranks, old_tensor.separation_rank)
+        for s in range(old_tensor.separation_rank):
+            for k in range(len(old_tensor.ranks)):
+                new_tensor.factor_matrices[s][k] = torch.clone(old_tensor.factor_matrices[s][k])
+
+        new_tensor.core_tensor = torch.nn.Parameter(torch.clone(old_tensor.core_tensor))
+        return new_tensor
+
     # Expand core tensor and factor matrices to full tensor, optionally excluding
     # a given term from the separation rank decomposition
     def expand_to_tensor(self, skip_term=None):

@@ -86,7 +86,12 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
             break
 
         if verbose and iteration % max(1, max_iter // 50) == 0:
-            print(f"Iteration {iteration} | Delta: {diff}, Last Batch Training Loss: {loss}")
+            loss_type = "Training Batch"
+            if val_dataset is not None:
+                loss = val_loss
+                loss_type = "Validation"
+
+            print(f"Iteration {iteration} | Delta: {diff}, {loss_type} Loss: {loss}")
 
     diagnostics = {"estimation_error": estim_error, "val_loss": val_losses}
     return lsr_ten, diagnostics
