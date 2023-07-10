@@ -19,7 +19,7 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
         val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
 
 
-    lsr_ten = LSR_tensor(shape, ranks, sep_rank, init_zero=init_zero)
+    lsr_ten = LSR_tensor_dot(shape, ranks, sep_rank, init_zero=init_zero)
     params = lsr_ten.parameters()
 
     estim_error = []

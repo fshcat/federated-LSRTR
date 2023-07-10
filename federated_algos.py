@@ -54,7 +54,7 @@ def svd_aggregation(matrix_list):
     return torch.nn.Parameter(torch.linalg.svd(combined_matrix)[0][:, :num_cols])
 
 def BCD_federated_stepwise(shape, ranks, separation_rank, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, verbose=False):
-    lsr_tensor = LSR_tensor(shape, ranks, separation_rank)
+    lsr_tensor = LSR_tensor_dot(shape, ranks, separation_rank)
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
     val_losses = []
@@ -66,7 +66,7 @@ def BCD_federated_stepwise(shape, ranks, separation_rank, client_datasets, val_d
             for k in range(len(ranks)):
                 client_outputs = []
                 for client_dataset in client_datasets:
-                    init_tensor = LSR_tensor.copy(lsr_tensor)
+                    init_tensor = LSR_tensor_dot.copy(lsr_tensor)
 
                     batch_size = hypers["batch_size"]
                     if batch_size is None:
@@ -81,7 +81,7 @@ def BCD_federated_stepwise(shape, ranks, separation_rank, client_datasets, val_d
 
         client_outputs = []
         for client_dataset in client_datasets:
-            init_tensor = LSR_tensor.copy(lsr_tensor)
+            init_tensor = LSR_tensor_dot.copy(lsr_tensor)
 
             batch_size = hypers["batch_size"]
             if batch_size is None:
@@ -107,7 +107,7 @@ def BCD_federated_stepwise(shape, ranks, separation_rank, client_datasets, val_d
     return lsr_tensor, val_losses
 
 def BCD_federated_all_factors(shape, ranks, separation_rank, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, verbose=False):
-    lsr_tensor = LSR_tensor(shape, ranks, separation_rank)
+    lsr_tensor = LSR_tensor_dot(shape, ranks, separation_rank)
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
     val_losses = []
@@ -117,7 +117,7 @@ def BCD_federated_all_factors(shape, ranks, separation_rank, client_datasets, va
     for iteration in range(hypers["max_iter"]):
         client_outputs = []
         for client_dataset in client_datasets:
-            init_tensor = LSR_tensor.copy(lsr_tensor)
+            init_tensor = LSR_tensor_dot.copy(lsr_tensor)
 
             batch_size = hypers["batch_size"]
             if batch_size is None:
@@ -135,7 +135,7 @@ def BCD_federated_all_factors(shape, ranks, separation_rank, client_datasets, va
 
         client_outputs = []
         for client_dataset in client_datasets:
-            init_tensor = LSR_tensor.copy(lsr_tensor)
+            init_tensor = LSR_tensor_dot.copy(lsr_tensor)
 
             batch_size = hypers["batch_size"]
             if batch_size is None:
@@ -161,7 +161,7 @@ def BCD_federated_all_factors(shape, ranks, separation_rank, client_datasets, va
     return lsr_tensor, val_losses
 
 def BCD_federated_full_iteration(shape, ranks, separation_rank, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, verbose=False):
-    lsr_tensor = LSR_tensor(shape, ranks, separation_rank)
+    lsr_tensor = LSR_tensor_dot(shape, ranks, separation_rank)
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
     val_losses = []
@@ -171,7 +171,7 @@ def BCD_federated_full_iteration(shape, ranks, separation_rank, client_datasets,
     for comm_round in range(hypers["max_rounds"]):
         client_outputs = []
         for client_dataset in client_datasets:
-            init_tensor = LSR_tensor.copy(lsr_tensor)
+            init_tensor = LSR_tensor_dot.copy(lsr_tensor)
 
             batch_size = hypers["batch_size"]
             if batch_size is None:

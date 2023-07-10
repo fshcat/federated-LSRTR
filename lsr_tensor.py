@@ -3,7 +3,7 @@ import tensorly as ten
 import tltorch as tlt
 
 # Class for Low Separation Rank tensor decomposition
-class LSR_tensor(torch.nn.Module):
+class LSR_tensor_dot(torch.nn.Module):
     def __init__(self, shape, ranks, separation_rank, init_zero=False):
         super(LSR_tensor, self).__init__()
         self.shape = shape
