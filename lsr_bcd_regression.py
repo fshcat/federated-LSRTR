@@ -2,10 +2,10 @@ from lsr_tensor import *
 import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
-def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
+def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
                        threshold=1e-6, max_iter=200, init_zero=False, ortho=True, true_param=None, val_dataset=None,\
                        verbose=False, adam=False):
-    order = len(shape)
+    shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
 
     if batch_size is None:
         batch_size=len(dataset)
@@ -19,9 +19,7 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
         val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
 
 
-    lsr_ten = LSR_tensor_dot(shape, ranks, sep_rank, init_zero=init_zero)
     params = lsr_ten.parameters()
-
     estim_error = []
     val_losses = []
 
@@ -38,8 +36,12 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
 
                 for _ in range(step_epochs):
                     for X, y in dataloader:
+                        X = torch.squeeze(X)
+                        y = torch.squeeze(y)
+
                         optimizer.zero_grad()
                         y_predicted = lsr_ten.bcd_factor_forward(s, k, X)
+
                         loss = loss_func(y_predicted, y)
                         loss.backward()
                         optimizer.step()
@@ -56,6 +58,9 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
         # core tensor update
         for _ in range(step_epochs):
             for X, y in dataloader:
+                X = torch.squeeze(X)
+                y = torch.squeeze(y)
+
                 optimizer.zero_grad()
                 y_predicted = lsr_ten.bcd_core_forward(X)
                 loss = loss_func(y_predicted, y)
@@ -73,6 +78,9 @@ def lsr_bcd_regression(loss_func, dataset, shape, ranks, sep_rank, lr=0.01, mome
 
             with torch.no_grad():
                 for X, y in val_dataloader:
+                    X = torch.squeeze(X)
+                    y = torch.squeeze(y)
+
                     y_predicted = lsr_ten.forward(X)
                     val_loss += loss_func(y_predicted, y) * len(X)
                 val_loss /= len(val_dataset)

@@ -4,8 +4,8 @@ import tltorch as tlt
 
 # Class for Low Separation Rank tensor decomposition
 class LSR_tensor_dot(torch.nn.Module):
-    def __init__(self, shape, ranks, separation_rank, init_zero=False):
-        super(LSR_tensor, self).__init__()
+    def __init__(self, shape, ranks, separation_rank, init_zero=False, dtype=torch.float32):
+        super(LSR_tensor_dot, self).__init__()
         self.shape = shape
         self.ranks = ranks
         self.separation_rank = separation_rank        
@@ -13,9 +13,9 @@ class LSR_tensor_dot(torch.nn.Module):
 
         # Initialize core tensor as either zeros or independent standard gaussians
         if init_zero:
-            self.core_tensor = torch.nn.parameter.Parameter(torch.zeros(ranks))
+            self.core_tensor = torch.nn.parameter.Parameter(torch.zeros(ranks, dtype=dtype))
         else:
-            self.core_tensor = torch.nn.parameter.Parameter(torch.normal(0, 1, size=ranks))
+            self.core_tensor = torch.nn.parameter.Parameter(torch.normal(0, 1, size=ranks, dtype=dtype))
 
         self.factor_matrices = torch.nn.ModuleList()
 
@@ -25,9 +25,9 @@ class LSR_tensor_dot(torch.nn.Module):
 
             for k in range(self.order):
                 if init_zero:
-                    factors_s.append(torch.zeros((shape[k], ranks[k])))
+                    factors_s.append(torch.zeros((shape[k], ranks[k]), dtype=dtype))
                 else:
-                    factor_matrix_A = torch.normal(torch.zeros((shape[k], ranks[k])), torch.ones((shape[k], ranks[k])))
+                    factor_matrix_A = torch.normal(torch.zeros((shape[k], ranks[k]), dtype=dtype), torch.ones((shape[k], ranks[k]), dtype=dtype))
 
                     # Orthonormalize matrix
                     factor_matrix_B = torch.linalg.qr(factor_matrix_A)[0]
