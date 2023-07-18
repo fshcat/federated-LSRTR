@@ -6,6 +6,7 @@ import tltorch as tlt
 class LSR_tensor_dot(torch.nn.Module):
     def __init__(self, shape, ranks, separation_rank, init_zero=False, dtype=torch.float32):
         super(LSR_tensor_dot, self).__init__()
+         
         self.shape = shape
         self.ranks = ranks
         self.separation_rank = separation_rank        
@@ -30,8 +31,8 @@ class LSR_tensor_dot(torch.nn.Module):
                     factor_matrix_A = torch.normal(torch.zeros((shape[k], ranks[k]), dtype=dtype), torch.ones((shape[k], ranks[k]), dtype=dtype))
 
                     # Orthonormalize matrix
-                    factor_matrix_B = torch.linalg.qr(factor_matrix_A)[0]
-                    factors_s.append(factor_matrix_B)
+                    factor_matrix_B = torch.linalg.qr(factor_matrix_A)
+                    factors_s.append(factor_matrix_B[0])
 
             self.factor_matrices.append(factors_s)
 
