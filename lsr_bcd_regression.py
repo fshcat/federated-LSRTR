@@ -2,8 +2,8 @@ from lsr_tensor import *
 import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
-def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
-                       threshold=1e-6, max_iter=200, init_zero=False, ortho=True, true_param=None, val_dataset=None,\
+def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
+                       threshold=1e-6, max_iter=200, init_zero=False, ortho=True, true_param=None,\
                        verbose=False, adam=False):
     shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
 
@@ -11,7 +11,7 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
         batch_size=len(dataset)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
         X, y = next(iter(dataloader))
-        dataloader = [(X, y)]
+        dataloader = [(X.to(device=lsr_ten.device), y.to(device=lsr_ten.device))]
     else:
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
 
@@ -36,6 +36,9 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
 
                 for _ in range(step_epochs):
                     for X, y in dataloader:
+                        X = X.to(device=lsr_ten.device)
+                        y = y.to(device=lsr_ten.device)
+
                         X = torch.squeeze(X)
                         y = torch.squeeze(y)
 
@@ -58,6 +61,9 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
         # core tensor update
         for _ in range(step_epochs):
             for X, y in dataloader:
+                X = X.to(device=lsr_ten.device)
+                y = y.to(device=lsr_ten.device)
+
                 X = torch.squeeze(X)
                 y = torch.squeeze(y)
 
@@ -78,6 +84,9 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
 
             with torch.no_grad():
                 for X, y in val_dataloader:
+                    X = X.to(device=lsr_ten.device)
+                    y = y.to(device=lsr_ten.device)
+
                     X = torch.squeeze(X)
                     y = torch.squeeze(y)
 
@@ -85,7 +94,7 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
                     val_loss += loss_func(y_predicted, y) * len(X)
                 val_loss /= len(val_dataset)
 
-            val_losses.append(val_loss) 
+            val_losses.append(val_loss.cpu()) 
 
 
         # Stop if the change in the LSR tensor is under the convergence threshold
@@ -102,5 +111,5 @@ def lsr_bcd_regression(loss_func, dataset, lsr_ten, lr=0.01, momentum=0.9, step_
             print(f"Iteration {iteration} | Delta: {diff}, {loss_type} Loss: {loss}")
 
     diagnostics = {"estimation_error": estim_error, "val_loss": val_losses}
-    return lsr_ten, diagnostics
+    return lsr_ten, diagnostics["val_loss"]
 

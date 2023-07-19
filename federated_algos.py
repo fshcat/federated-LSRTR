@@ -1,4 +1,5 @@
 import torch
+import sys
 from lsr_tensor import *
 
 def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
@@ -6,6 +7,12 @@ def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
 
     for _ in range(steps):
         for X, y in dataloader:
+            X = X.to(tensor.device)
+            y = y.to(tensor.device)
+
+            X = torch.squeeze(X)
+            y = torch.squeeze(y)
+
             optimizer.zero_grad()
             y_predicted = tensor.bcd_core_forward(X)
             loss = loss_fn(y_predicted, y)
@@ -19,6 +26,12 @@ def client_update_factor(tensor, s, k, dataloader, optim_fn, loss_fn, steps):
 
     for _ in range(steps):
         for X, y in dataloader:
+            X = X.to(tensor.device)
+            y = y.to(tensor.device)
+
+            X = torch.squeeze(X)
+            y = torch.squeeze(y)
+
             optimizer.zero_grad()
             y_predicted = tensor.bcd_factor_forward(s, k, X)
             loss = loss_fn(y_predicted, y)
@@ -27,7 +40,7 @@ def client_update_factor(tensor, s, k, dataloader, optim_fn, loss_fn, steps):
 
     return tensor.factor_matrices[s][k]
 
-def client_update_factors(init_tensor, client_dataloader, optim_fn, loss_fn, steps, ortho=False):
+def client_update_factors(init_tensor, client_dataloader, optim_fn, loss_fn, steps, ortho=True):
     for s in range(len(init_tensor.factor_matrices)):
         for k in range(len(init_tensor.factor_matrices[s])):
             client_update_factor(init_tensor, s, k, client_dataloader, optim_fn, loss_fn, steps)
@@ -59,35 +72,36 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+
+    client_dataloaders = []
+    for client_dataset in client_datasets:
+        batch_size = hypers["batch_size"]
+        if batch_size is None:
+            batch_size = len(client_dataset)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            X, y = next(iter(client_dataloader))
+            client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
+        else:
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+
+        client_dataloaders.append(client_dataloader)
 
     for iteration in range(hypers["max_iter"]):
         for s in range(separation_rank):
             for k in range(len(ranks)):
                 client_outputs = []
-                for client_dataset in client_datasets:
+                for client_dataloader in client_dataloaders:
                     init_tensor = LSR_tensor_dot.copy(lsr_tensor)
-
-                    batch_size = hypers["batch_size"]
-                    if batch_size is None:
-                        batch_size = len(client_dataset)
-
-                    client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size)
                     client_out = client_update_factor(init_tensor, s, k, client_dataloader, optim_fn, loss_fn, hypers["steps"])
                     client_outputs.append(client_out)
 
-                lsr_tensor.factor_matrices[s][k] = aggregator_fn(client_outputs)
+                lsr_tensor.factor_matrices[s][k] = aggregator_fn(client_outputs).contiguous()
                 lsr_tensor.orthonorm_factor(s, k)
 
         client_outputs = []
-        for client_dataset in client_datasets:
+        for client_dataloader in client_dataloaders:
             init_tensor = LSR_tensor_dot.copy(lsr_tensor)
-
-            batch_size = hypers["batch_size"]
-            if batch_size is None:
-                batch_size = len(client_dataset)
-
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size)
             client_out = client_update_core(init_tensor, client_dataloader, optim_fn, loss_fn, hypers["steps"])
             client_outputs.append(client_out)
 
@@ -96,13 +110,19 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
         val_loss = 0 
         with torch.no_grad():
             for X, y in val_dataloader:
+                X = X.to(lsr_tensor.device)
+                y = y.to(lsr_tensor.device)
+
+                X = torch.squeeze(X)
+                y = torch.squeeze(y)
+
                 y_predicted = lsr_tensor.forward(X)
                 val_loss += loss_fn(y_predicted, y) * len(X)
             val_loss /= len(val_dataset)
 
         if verbose:
             print(f"Iteration {iteration} | Validation Loss: {val_loss}")
-        val_losses.append(val_loss) 
+        val_losses.append(val_loss.cpu()) 
 
     return lsr_tensor, val_losses
 
@@ -112,18 +132,24 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+
+    client_dataloaders = []
+    for client_dataset in client_datasets:
+        batch_size = hypers["batch_size"]
+        if batch_size is None:
+            batch_size = len(client_dataset)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            X, y = next(iter(client_dataloader))
+            client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
+        else:
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True) 
+        client_dataloaders.append(client_dataloader)
 
     for iteration in range(hypers["max_iter"]):
         client_outputs = []
-        for client_dataset in client_datasets:
+        for client_dataloader in client_dataloaders:
             init_tensor = LSR_tensor_dot.copy(lsr_tensor)
-
-            batch_size = hypers["batch_size"]
-            if batch_size is None:
-                batch_size = len(client_dataset)
-
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size)
             client_out = client_update_factors(init_tensor, client_dataloader, optim_fn, loss_fn, hypers["steps"], ortho=ortho_iteratively)
             client_outputs.append(client_out)
 
@@ -134,14 +160,8 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
                 lsr_tensor.orthonorm_factor(s, k)
 
         client_outputs = []
-        for client_dataset in client_datasets:
+        for client_dataloader in client_dataloaders:
             init_tensor = LSR_tensor_dot.copy(lsr_tensor)
-
-            batch_size = hypers["batch_size"]
-            if batch_size is None:
-                batch_size = len(client_dataset)
-
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size)
             client_out = client_update_core(init_tensor, client_dataloader, optim_fn, loss_fn, hypers["steps"])
             client_outputs.append(client_out)
 
@@ -150,13 +170,19 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
         val_loss = 0 
         with torch.no_grad():
             for X, y in val_dataloader:
+                X = X.to(lsr_tensor.device)
+                y = y.to(lsr_tensor.device)
+
+                X = torch.squeeze(X)
+                y = torch.squeeze(y)
+
                 y_predicted = lsr_tensor.forward(X)
                 val_loss += loss_fn(y_predicted, y) * len(X)
             val_loss /= len(val_dataset)
 
         if verbose:
             print(f"Iteration {iteration} | Validation Loss: {val_loss}")
-        val_losses.append(val_loss) 
+        val_losses.append(val_loss.cpu()) 
 
     return lsr_tensor, val_losses
 
@@ -166,18 +192,25 @@ def BCD_federated_full_iteration(lsr_tensor, client_datasets, val_dataset, hyper
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+
+    client_dataloaders = []
+    for client_dataset in client_datasets:
+        batch_size = hypers["batch_size"]
+        if batch_size is None:
+            batch_size = len(client_dataset)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            X, y = next(iter(client_dataloader))
+            client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
+        else:
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+
+        client_dataloaders.append(client_dataloader)
 
     for comm_round in range(hypers["max_rounds"]):
         client_outputs = []
-        for client_dataset in client_datasets:
+        for client_dataloader in client_dataloaders:
             init_tensor = LSR_tensor_dot.copy(lsr_tensor)
-
-            batch_size = hypers["batch_size"]
-            if batch_size is None:
-                batch_size = len(client_dataset)
-
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size)
             client_out = client_update_full(init_tensor, client_dataloader, optim_fn, loss_fn, hypers["steps"], hypers["max_iter"])
             client_outputs.append(client_out)
 
@@ -193,12 +226,18 @@ def BCD_federated_full_iteration(lsr_tensor, client_datasets, val_dataset, hyper
         val_loss = 0 
         with torch.no_grad():
             for X, y in val_dataloader:
+                X = X.to(lsr_tensor.device)
+                y = y.to(lsr_tensor.device)
+
+                X = torch.squeeze(X)
+                y = torch.squeeze(y)
+                
                 y_predicted = lsr_tensor.forward(X)
                 val_loss += loss_fn(y_predicted, y) * len(X)
             val_loss /= len(val_dataset)
 
         if verbose:
             print(f"Round {comm_round} | Validation Loss: {val_loss}")
-        val_losses.append(val_loss) 
+        val_losses.append(val_loss.cpu()) 
 
     return lsr_tensor, val_losses
