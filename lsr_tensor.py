@@ -76,7 +76,7 @@ class LSR_tensor_dot(torch.nn.Module):
 
     # Absorb all factor matrices and core tensor into the input tensor except for matrix s, k
     # Used during a factor matrix update step of block coordiante descent
-    @lru_cache(maxsize=1)
+    @lru_cache(maxsize=0)
     @torch.no_grad()
     def bcd_factor_update_x(self, s, k, x):
         omega = ten.base.partial_tensor_to_vec(

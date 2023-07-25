@@ -5,8 +5,12 @@ from lsr_tensor import *
 def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
     optimizer = optim_fn(tensor.parameters())
 
+    x_combineds = []
+    for X, y in dataloader:
+        x_combineds.append(tensor.bcd_core_update_x(X))
+
     for _ in range(steps):
-        for X, y in dataloader:
+        for (X, y), x_combined in zip(dataloader, x_combineds):
             X = X.to(tensor.device)
             y = y.to(tensor.device)
 
@@ -14,7 +18,7 @@ def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
             y = torch.squeeze(y)
 
             optimizer.zero_grad()
-            y_predicted = tensor.bcd_core_forward(X)
+            y_predicted = tensor.bcd_core_forward(x_combined, precombined=True)
             loss = loss_fn(y_predicted, y)
             loss.backward()
             optimizer.step()
@@ -24,8 +28,12 @@ def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
 def client_update_factor(tensor, s, k, dataloader, optim_fn, loss_fn, steps):
     optimizer = optim_fn(tensor.parameters())
 
+    x_combineds = []
+    for X, y in dataloader:
+        x_combineds.append(tensor.bcd_factor_update_x(s, k, X))
+
     for _ in range(steps):
-        for X, y in dataloader:
+        for (X, y), x_combined in zip(dataloader, x_combineds):
             X = X.to(tensor.device)
             y = y.to(tensor.device)
 
@@ -33,7 +41,7 @@ def client_update_factor(tensor, s, k, dataloader, optim_fn, loss_fn, steps):
             y = torch.squeeze(y)
 
             optimizer.zero_grad()
-            y_predicted = tensor.bcd_factor_forward(s, k, X)
+            y_predicted = tensor.bcd_factor_forward(s, k, x_combined, precombined=True)
             loss = loss_fn(y_predicted, y)
             loss.backward()
             optimizer.step()
@@ -72,18 +80,18 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders = []
     for client_dataset in client_datasets:
         batch_size = hypers["batch_size"]
         if batch_size is None:
             batch_size = len(client_dataset)
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
             X, y = next(iter(client_dataloader))
             client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
         else:
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
 
         client_dataloaders.append(client_dataloader)
 
@@ -96,7 +104,9 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
                     client_out = client_update_factor(init_tensor, s, k, client_dataloader, optim_fn, loss_fn, hypers["steps"])
                     client_outputs.append(client_out)
 
-                lsr_tensor.factor_matrices[s][k] = aggregator_fn(client_outputs).contiguous()
+                with torch.no_grad():
+                    lsr_tensor.factor_matrices[s][k][:, :] = aggregator_fn(client_outputs)[:, :]
+
                 lsr_tensor.orthonorm_factor(s, k)
 
         client_outputs = []
@@ -132,18 +142,18 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders = []
     for client_dataset in client_datasets:
         batch_size = hypers["batch_size"]
         if batch_size is None:
             batch_size = len(client_dataset)
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
             X, y = next(iter(client_dataloader))
             client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
         else:
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True) 
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
         client_dataloaders.append(client_dataloader)
 
     for iteration in range(hypers["max_iter"]):
@@ -192,18 +202,18 @@ def BCD_federated_full_iteration(lsr_tensor, client_datasets, val_dataset, hyper
 
     val_losses = []
     val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders = []
     for client_dataset in client_datasets:
         batch_size = hypers["batch_size"]
         if batch_size is None:
             batch_size = len(client_dataset)
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
             X, y = next(iter(client_dataloader))
             client_dataloader = [(X.to(device=lsr_tensor.device), y.to(device=lsr_tensor.device))]
         else:
-            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True)
+            client_dataloader = torch.utils.data.DataLoader(client_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
 
         client_dataloaders.append(client_dataloader)
 

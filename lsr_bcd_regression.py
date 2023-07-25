@@ -2,14 +2,15 @@ from lsr_tensor import *
 import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
-def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, momentum=0.9, step_epochs=5, batch_size=None,\
-                       threshold=1e-6, max_iter=200, init_zero=False, ortho=True, true_param=None,\
-                       verbose=False, adam=False):
+def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
+                       verbose=False, true_param=None, adam=False):
     shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
+    batch_size = hypers["batch_size"]
 
     if batch_size is None:
         batch_size=len(dataset)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size)
+
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
         X, y = next(iter(dataloader))
         dataloader = [(X.to(device=lsr_ten.device), y.to(device=lsr_ten.device))]
     else:
@@ -23,19 +24,23 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, m
     estim_error = []
     val_losses = []
 
-    for iteration in range(max_iter):
+    for iteration in range(hypers["max_iter"]):
         prev = lsr_ten.expand_to_tensor()
 
         # factor matrix updates
         for s in range(sep_rank):
             for k in range(len(ranks)): 
                 if adam:
-                    optimizer = torch.optim.Adam(lsr_ten.parameters(), lr=lr, eps=1e-4)
+                    optimizer = torch.optim.Adam(lsr_ten.parameters(), lr=hypers["lr"], eps=1e-4)
                 else:
-                    optimizer = torch.optim.SGD(lsr_ten.parameters(), lr=lr, momentum=momentum)
+                    optimizer = torch.optim.SGD(lsr_ten.parameters(), lr=hypers["lr"], momentum=hypers["momentum"])
 
-                for _ in range(step_epochs):
-                    for X, y in dataloader:
+                x_combineds = []
+                for X, y in dataloader:
+                    x_combineds.append(lsr_ten.bcd_factor_update_x(s, k, X))
+
+                for _ in range(hypers["steps"]):
+                    for (X, y), x_combined in zip(dataloader, x_combineds):
                         X = X.to(device=lsr_ten.device)
                         y = y.to(device=lsr_ten.device)
 
@@ -43,24 +48,27 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, m
                         y = torch.squeeze(y)
 
                         optimizer.zero_grad()
-                        y_predicted = lsr_ten.bcd_factor_forward(s, k, X)
+                        y_predicted = lsr_ten.bcd_factor_forward(s, k, x_combined, precombined=True)
 
                         loss = loss_func(y_predicted, y)
                         loss.backward()
                         optimizer.step()
 
-                if ortho:
-                    lsr_ten.orthonorm_factor(s, k)
+                lsr_ten.orthonorm_factor(s, k)
 
 
         if adam:
-            optimizer = torch.optim.Adam(lsr_ten.parameters(), lr=lr, eps=1e-4)
+            optimizer = torch.optim.Adam(lsr_ten.parameters(), lr=hypers["lr"], eps=1e-4)
         else:
-            optimizer = torch.optim.SGD(lsr_ten.parameters(), lr=lr, momentum=momentum)
+            optimizer = torch.optim.SGD(lsr_ten.parameters(), lr=hypers["lr"], momentum=hypers["momentum"])
+
+        x_combineds = []
+        for X, y in dataloader:
+            x_combineds.append(lsr_ten.bcd_core_update_x(X))
 
         # core tensor update
-        for _ in range(step_epochs):
-            for X, y in dataloader:
+        for _ in range(hypers["steps"]):
+            for (X, y), x_combined in zip(dataloader, x_combineds):
                 X = X.to(device=lsr_ten.device)
                 y = y.to(device=lsr_ten.device)
 
@@ -68,7 +76,7 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, m
                 y = torch.squeeze(y)
 
                 optimizer.zero_grad()
-                y_predicted = lsr_ten.bcd_core_forward(X)
+                y_predicted = lsr_ten.bcd_core_forward(x_combined, precombined=True)
                 loss = loss_func(y_predicted, y)
                 loss.backward()
                 optimizer.step()
@@ -99,10 +107,10 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset=None, lr=0.01, m
 
         # Stop if the change in the LSR tensor is under the convergence threshold
         diff = torch.norm(lsr_ten.expand_to_tensor() - prev)
-        if diff < threshold:
+        if diff < hypers["threshold"]:
             break
 
-        if verbose and iteration % max(1, max_iter // 50) == 0:
+        if verbose and iteration % max(1, hypers["max_iter"] // 50) == 0:
             loss_type = "Training Batch"
             if val_dataset is not None:
                 loss = val_loss
