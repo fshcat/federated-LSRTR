@@ -1,15 +1,19 @@
 from lsr_tensor import *
+from federated_algos import get_full_accuracy, get_full_loss
 import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
-def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
-                       verbose=False, true_param=None, adam=False):
+def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accuracy=False,\
+                       verbose=False, optimize=False, true_param=None, adam=False):
     shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
     batch_size = hypers["batch_size"]
 
+    train_losses, val_losses = [], []
+    train_accs, val_accs = [], []
+    perf_info = {}
+
     if batch_size is None:
         batch_size=len(dataset)
-
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
         X, y = next(iter(dataloader))
         dataloader = [(X.to(device=lsr_ten.device), y.to(device=lsr_ten.device))]
@@ -37,6 +41,12 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
 
                 x_combineds = []
                 for X, y in dataloader:
+                    X = X.to(device=lsr_ten.device)
+                    y = y.to(device=lsr_ten.device)
+
+                    X = torch.squeeze(X)
+                    y = torch.squeeze(y)
+
                     x_combineds.append(lsr_ten.bcd_factor_update_x(s, k, X))
 
                 for _ in range(hypers["steps"]):
@@ -48,6 +58,10 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
                         y = torch.squeeze(y)
 
                         optimizer.zero_grad()
+
+                        if not optimize:
+                            x_combined = lsr_ten.bcd_factor_update_x(s, k, X)
+
                         y_predicted = lsr_ten.bcd_factor_forward(s, k, x_combined, precombined=True)
 
                         loss = loss_func(y_predicted, y)
@@ -64,6 +78,12 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
 
         x_combineds = []
         for X, y in dataloader:
+            X = X.to(device=lsr_ten.device)
+            y = y.to(device=lsr_ten.device)
+
+            X = torch.squeeze(X)
+            y = torch.squeeze(y)
+
             x_combineds.append(lsr_ten.bcd_core_update_x(X))
 
         # core tensor update
@@ -76,6 +96,10 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
                 y = torch.squeeze(y)
 
                 optimizer.zero_grad()
+
+                if not optimize:
+                    x_combined = lsr_ten.bcd_core_update_x(X)
+
                 y_predicted = lsr_ten.bcd_core_forward(x_combined, precombined=True)
                 loss = loss_func(y_predicted, y)
                 loss.backward()
@@ -87,37 +111,22 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers,\
 
             estim_error.append(error.detach())
 
-        if val_dataset is not None:
-            val_loss = 0 
-
-            with torch.no_grad():
-                for X, y in val_dataloader:
-                    X = X.to(device=lsr_ten.device)
-                    y = y.to(device=lsr_ten.device)
-
-                    X = torch.squeeze(X)
-                    y = torch.squeeze(y)
-
-                    y_predicted = lsr_ten.forward(X)
-                    val_loss += loss_func(y_predicted, y) * len(X)
-                val_loss /= len(val_dataset)
-
-            val_losses.append(val_loss.cpu()) 
+        val_losses.append(get_full_loss(lsr_ten, val_dataloader, loss_func))
+        train_losses.append(get_full_loss(lsr_ten, dataloader, loss_func))
 
 
-        # Stop if the change in the LSR tensor is under the convergence threshold
+        if accuracy:
+            val_accs.append(get_full_accuracy(lsr_ten, val_dataloader))
+            train_accs.append(get_full_accuracy(lsr_ten, dataloader))
+
+        if verbose:
+            print(f"Iteration {iteration} | Validation Loss: {val_losses[-1]}")
+
         diff = torch.norm(lsr_ten.expand_to_tensor() - prev)
         if diff < hypers["threshold"]:
             break
 
-        if verbose and iteration % max(1, hypers["max_iter"] // 50) == 0:
-            loss_type = "Training Batch"
-            if val_dataset is not None:
-                loss = val_loss
-                loss_type = "Validation"
+    perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
+    perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
-            print(f"Iteration {iteration} | Delta: {diff}, {loss_type} Loss: {loss}")
-
-    diagnostics = {"estimation_error": estim_error, "val_loss": val_losses}
-    return lsr_ten, diagnostics["val_loss"]
-
+    return lsr_ten, perf_info
