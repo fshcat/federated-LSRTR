@@ -127,6 +127,7 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accurac
             break
 
     perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
+    if accuracy:
+        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
     return lsr_ten, perf_info

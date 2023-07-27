@@ -188,7 +188,8 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
             print(f"Iteration {iteration} | Validation Loss: {val_losses[-1]}")
 
     perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
+    if accuracy:
+        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
     return lsr_tensor, perf_info
 
@@ -238,7 +239,8 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
             print(f"Iteration {iteration} | Validation Loss: {val_losses[-1]}")
 
     perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
+    if accuracy:
+        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
     return lsr_tensor, perf_info
 
@@ -283,7 +285,8 @@ def BCD_federated_full_iteration(lsr_tensor, client_datasets, val_dataset, hyper
             print(f"Round {comm_round} | Validation Loss: {val_losses[-1]}")
 
     perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
+    if accuracy:
+        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
     return lsr_tensor, perf_info
 
