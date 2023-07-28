@@ -48,13 +48,16 @@ class LSR_tensor_dot(torch.nn.Module):
     # Create a new LSR_tensor using the parameters from the LSR_tensor provided
     @classmethod
     @torch.no_grad()
-    def copy(cls, old_tensor):
-        new_tensor = cls(old_tensor.shape, old_tensor.ranks, old_tensor.separation_rank, old_tensor.dtype, old_tensor.device, initialize=False)
+    def copy(cls, old_tensor, device=None):
+        if device is None:
+            device = old_tensor.device
+
+        new_tensor = cls(old_tensor.shape, old_tensor.ranks, old_tensor.separation_rank, old_tensor.dtype, device, initialize=False)
         for s in range(old_tensor.separation_rank):
             for k in range(len(old_tensor.ranks)):
-                new_tensor.factor_matrices[s][k] = torch.clone(old_tensor.factor_matrices[s][k])
+                new_tensor.factor_matrices[s][k] = torch.clone(old_tensor.factor_matrices[s][k]).to(device)
 
-        new_tensor.core_tensor = torch.nn.Parameter(torch.clone(old_tensor.core_tensor))
+        new_tensor.core_tensor = torch.nn.Parameter(torch.clone(old_tensor.core_tensor).to(device))
         return new_tensor
 
     # Expand core tensor and factor matrices to full tensor, optionally excluding
