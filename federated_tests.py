@@ -11,7 +11,8 @@ import os
 def run_trial(method, tensor_params, *args):
     init_tensor_dot = LSR_tensor_dot(*tensor_params)
     final_lsr_dot, perf_info = method(init_tensor_dot, *args)
-    return final_lsr_dot, perf_info
+    lsr_dot_copy = LSR_tensor_dot.copy(final_lsr_dot, device=torch.device('cpu'))
+    return lsr_dot_copy, perf_info
 
 def run_test(path, n_runs, n_workers, method, tensor_params, *args, verbose=True):
     os.makedirs(f"{path}/weights", exist_ok=True)
