@@ -4,7 +4,7 @@ import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
 def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accuracy=False,\
-                       verbose=False, optimize=False, true_param=None, adam=False):
+                       verbose=False, optimize=True, true_param=None, adam=False):
     shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
     batch_size = hypers["batch_size"]
 
@@ -131,3 +131,33 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accurac
         perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
 
     return lsr_ten, perf_info
+
+def BCD_avg_local(lsr_ten, loss_func, client_datasets, val_dataset, hypers, accuracy=False,\
+                       verbose=False, optimize=True, true_param=None, adam=False):
+
+    perf_info_list = []
+    avg_perf_info = {}
+
+    best_val_loss = None
+    return_tensor = None
+
+    for client_dataset in client_datasets:
+        final_tensor, perf_info = lsr_bcd_regression(lsr_ten, loss_func, client_dataset, val_dataset, hypers, accuracy, verbose, optimize, true_param, adam)
+
+        if best_val_loss is None or perf_info["val_loss"][-1] < best_val_loss:
+            best_val_loss = perf_info["val_loss"][-1]
+            return_tensor = final_tensor
+
+        perf_info_list.append(perf_info)
+
+    avg_perf_info["val_loss"] = torch.mean(torch.stack([pinf["val_loss"] for pinf in perf_info_list], axis=0), axis=0)
+    avg_perf_info["train_loss"] = torch.mean(torch.stack([pinf["train_loss"] for pinf in perf_info_list], axis=0), axis=0)
+
+    if accuracy:
+        avg_perf_info["val_acc"] = torch.mean(torch.stack([pinf["val_acc"] for pinf in perf_info_list], axis=0), axis=0)
+        avg_perf_info["train_acc"] = torch.mean(torch.stack([pinf["train_acc"] for pinf in perf_info_list], axis=0), axis=0)
+
+    return return_tensor, avg_perf_info
+
+
+
