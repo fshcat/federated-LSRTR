@@ -73,6 +73,10 @@ class LSR_tensor_dot(torch.nn.Module):
 
         return full_lsr_tensor
 
+    # Expand only one tucker term
+    def expand_tucker_term(self, term=0):
+        return ten.tenalg.multi_mode_dot(self.core_tensor, self.factor_matrices[term])
+
     # Regular forward pass
     def forward(self, x):
         return ten.tenalg.inner(x, self.expand_to_tensor(), n_modes=self.order)
