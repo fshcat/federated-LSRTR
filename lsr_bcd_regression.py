@@ -3,8 +3,10 @@ from federated_algos import get_full_accuracy, get_full_loss
 import torch
 
 # Block coordinate descent optimization algorithm for LSR tensor regression
-def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accuracy=False,\
+def lsr_bcd_regression(lsr_ten, data, hypers, loss_func, accuracy=False,\
                        verbose=False, optimize=True, true_param=None, adam=False):
+    dataset, val_dataset, _ = data
+
     shape, ranks, sep_rank, order = lsr_ten.shape, lsr_ten.ranks, lsr_ten.separation_rank, lsr_ten.order
     batch_size = hypers["batch_size"]
 
@@ -132,8 +134,9 @@ def lsr_bcd_regression(lsr_ten, loss_func, dataset, val_dataset, hypers, accurac
 
     return lsr_ten, perf_info
 
-def BCD_avg_local(lsr_ten, loss_func, client_datasets, val_dataset, hypers, accuracy=False,\
+def BCD_avg_local(lsr_ten, data, hypers, loss_func, accuracy=False,\
                        verbose=False, optimize=True, true_param=None, adam=False):
+    _, val_dataset, client_datasets = data
 
     perf_info_list = []
     avg_perf_info = {}
@@ -142,7 +145,7 @@ def BCD_avg_local(lsr_ten, loss_func, client_datasets, val_dataset, hypers, accu
     return_tensor = None
 
     for client_dataset in client_datasets:
-        final_tensor, perf_info = lsr_bcd_regression(lsr_ten, loss_func, client_dataset, val_dataset, hypers, accuracy, verbose, optimize, true_param, adam)
+        final_tensor, perf_info = lsr_bcd_regression(lsr_ten, (client_dataset, val_dataset, client_datasets), hypers, loss_func, accuracy, verbose, optimize, true_param, adam)
 
         if best_val_loss is None or perf_info["val_loss"][-1] < best_val_loss:
             best_val_loss = perf_info["val_loss"][-1]

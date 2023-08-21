@@ -141,7 +141,9 @@ def get_full_accuracy(lsr_tensor, dataloader):
         acc = acc / len(dataloader[0][0])
     return acc.cpu()
 
-def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
+def BCD_federated_stepwise(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
+    _, val_dataset, client_datasets = data
+
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
@@ -193,7 +195,8 @@ def BCD_federated_stepwise(lsr_tensor, client_datasets, val_dataset, hypers, los
 
     return lsr_tensor, perf_info
 
-def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False, ortho_iteratively=True):
+def BCD_federated_all_factors(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False, ortho_iteratively=True):
+    _, val_dataset, client_datasets = data
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
@@ -244,7 +247,9 @@ def BCD_federated_all_factors(lsr_tensor, client_datasets, val_dataset, hypers, 
 
     return lsr_tensor, perf_info
 
-def BCD_federated_full_iteration(lsr_tensor, client_datasets, val_dataset, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
+def BCD_federated_full_iteration(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
+    _, val_dataset, client_datasets = data
+
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
