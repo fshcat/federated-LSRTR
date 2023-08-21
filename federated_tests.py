@@ -44,18 +44,17 @@ def run_combined_trial(methods, tensor_params, data, arg_list, save_weights):
 
         if save_weights:
             lsr_dot_copy = LSR_tensor_dot.copy(final_lsr_dot, device=torch.device('cpu'))
+            results.append((lsr_dot_copy, perf_info))
+        else:
+            results.append(perf_info)
 
-        results.append((lsr_dot_copy, perf_info))
-
-    if save_weights:
-        return lsr_dot_copy, results
-    else:
-        return results
+    return results
 
 def run_combined_test(path, n_runs, n_trials, n_workers, data_fn, tensor_params, names, methods, arg_list,  verbose=True, save_weights=False):
     os.makedirs(f"{path}/weights", exist_ok=True)
 
     results = []
+    trial_args = [(methods, tensor_params, data, arg_list, save_weights) for _ in range(n_trials)]
 
     for r in range(n_runs):
         data = data_fn()
@@ -63,24 +62,24 @@ def run_combined_test(path, n_runs, n_trials, n_workers, data_fn, tensor_params,
         if verbose:
             print(f"Run {r}")
 
-        trial_args = [(methods, tensor_params, data, arg_list, save_weights) for _ in range(n_trials)]
-
         with mp.get_context('spawn').Pool(processes=n_workers) as pool:
             results.extend(pool.starmap(run_combined_trial, trial_args))
     
     for i, name in enumerate(names):
         method_results = [rs[i] for rs in results]
+        #print(method_results)
 
         if save_weights:
             for j, (final_lsr_dot, _) in enumerate(method_results):
                 torch.save(final_lsr_dot, f"{path}/{name}/weights/lsr_dot_{j}.pt")
-
-        for key in method_results[0][1]:
-            if len(method_results[0][1][key]) > 0:
-                if not save_weights:
-                    torch.save(torch.stack([pinfo[key] for pinfo in method_results]), f"{path}/{name}/{key}")
-                else:
+                
+            for key in method_results[0][1]:
+                if len(method_results[0][1][key]) > 0:
                     torch.save(torch.stack([pinfo[key] for _, pinfo in method_results]), f"{path}/{name}/{key}")
+        else:
+            for key in method_results[0]:
+                if len(method_results[0][key]) > 0:
+                    torch.save(torch.stack([pinfo[key] for pinfo in method_results]), f"{path}/{name}/{key}")
 
 def logistic_loss(y_pred, y):
     y_pred = torch.sigmoid(y_pred)
