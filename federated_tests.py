@@ -34,19 +34,22 @@ def run_test(path, n_runs, n_workers, method, tensor_params, *args, verbose=True
         if len(results[0][1][key]) > 0:
             torch.save(torch.stack([pinfo[key] for _, pinfo in results]), f"{path}/{key}")
 
+def run_method_trial(method, init_tensor_dot, data, args, save_weights):
+    final_lsr_dot, perf_info = method(init_tensor_dot, data, *args)
+
+    if save_weights:
+        lsr_dot_copy = LSR_tensor_dot.copy(final_lsr_dot, device=torch.device('cpu'))
+        return lsr_dot_copy, perf_info
+    else:
+        return perf_info
+
 def run_combined_trial(methods, tensor_params, data, arg_list, save_weights):
     results = []
     init_tensor_dot = LSR_tensor_dot(*tensor_params)
+    tensor_dots = [LSR_tensor_dot.copy(init_tensor_dot) for _ in range(len(methods))]
 
-    for method, args in zip(methods, arg_list):
-        tensor_dot = LSR_tensor_dot.copy(init_tensor_dot)
-        final_lsr_dot, perf_info = method(tensor_dot, data, *args)
-
-        if save_weights:
-            lsr_dot_copy = LSR_tensor_dot.copy(final_lsr_dot, device=torch.device('cpu'))
-            results.append((lsr_dot_copy, perf_info))
-        else:
-            results.append(perf_info)
+    for method, args, tensor_dot in zip(methods, arg_list, tensor_dots):
+        results.append(run_method_trial(method, tensor_dot, data, args, save_weights))
 
     return results
 
@@ -54,10 +57,10 @@ def run_combined_test(path, n_runs, n_trials, n_workers, data_fn, tensor_params,
     os.makedirs(f"{path}/weights", exist_ok=True)
 
     results = []
-    trial_args = [(methods, tensor_params, data, arg_list, save_weights) for _ in range(n_trials)]
 
     for r in range(n_runs):
         data = data_fn()
+        trial_args = [(methods, tensor_params, data, arg_list, save_weights) for _ in range(n_trials)]
 
         if verbose:
             print(f"Run {r}")
