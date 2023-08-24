@@ -34,7 +34,8 @@ def run_test(path, n_runs, n_workers, method, tensor_params, *args, verbose=True
         if len(results[0][1][key]) > 0:
             torch.save(torch.stack([pinfo[key] for _, pinfo in results]), f"{path}/{key}")
 
-def run_method_trial(method, init_tensor_dot, data, args, save_weights):
+def run_method_trial(method, init_tensor_params, data, args, save_weights):
+    init_tensor_dot = LSR_tensor_dot.copy(init_tensor_params)
     final_lsr_dot, perf_info = method(init_tensor_dot, data, *args)
 
     if save_weights:
@@ -43,34 +44,36 @@ def run_method_trial(method, init_tensor_dot, data, args, save_weights):
     else:
         return perf_info
 
-def run_combined_trial(methods, tensor_params, data, arg_list, save_weights):
-    results = []
-    init_tensor_dot = LSR_tensor_dot(*tensor_params)
-    tensor_dots = [LSR_tensor_dot.copy(init_tensor_dot) for _ in range(len(methods))]
-
-    for method, args, tensor_dot in zip(methods, arg_list, tensor_dots):
-        results.append(run_method_trial(method, tensor_dot, data, args, save_weights))
-
-    return results
-
 def run_combined_test(path, n_runs, n_trials, n_workers, data_fn, tensor_params, names, methods, arg_list,  verbose=True, save_weights=False):
-    os.makedirs(f"{path}/weights", exist_ok=True)
-
-    results = []
+    results = {}
 
     for r in range(n_runs):
-        data = data_fn()
-        trial_args = [(methods, tensor_params, data, arg_list, save_weights) for _ in range(n_trials)]
-
         if verbose:
             print(f"Run {r}")
 
-        with mp.get_context('spawn').Pool(processes=n_workers) as pool:
-            results.extend(pool.starmap(run_combined_trial, trial_args))
+        data = data_fn()
+
+        shape, ranks, separation_rank, dtype, device = tensor_params
+        init_tensors = [LSR_tensor_dot(shape, ranks, separation_rank, dtype, device=torch.device('cpu')) for _ in range(n_trials)]
+        for ten in init_tensors:
+            ten.device = device
+
+        for method, args, name in zip(methods, arg_list, names):
+            method_results = []
+            for i in range(n_trials):
+                trial_args = [(method, init_tensors[i], data, args, save_weights) for _ in range(n_trials)]
+
+            with mp.get_context('spawn').Pool(processes=n_workers) as pool:
+                method_results.extend(pool.starmap(run_method_trial, trial_args))
+
+            if name not in results:
+                results[name] = method_results
+            else:
+                results[name].extend(method_results)
     
     for i, name in enumerate(names):
-        method_results = [rs[i] for rs in results]
-        #print(method_results)
+        os.makedirs(f"{path}/{name}/weights", exist_ok=True)
+        method_results = results[name]
 
         if save_weights:
             for j, (final_lsr_dot, _) in enumerate(method_results):
