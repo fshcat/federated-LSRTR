@@ -1,0 +1,107 @@
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+t fraction positive:  0.11235955056179775
+t fraction negative:  0.8876404494382022
+v fraction positive:  0.11458333333333333
+v fraction negative:  0.8854166666666666
+
+Training lr 0.001 steps 5 iterations 800 momentum 0.0
+Run 0
+final val_loss: 1.3427975512397512
+final train_loss: 1.3602600075748865
+final val_F1: 0.22311151976207177
+final train_F1: 0.21884557792908024
+final val_auc: 0.6342914438502675
+final train_auc: 0.6024662447257384
+final val_acc: 0.4137369692325592
+final train_acc: 0.41788384318351746
+
+Training lr 0.001 steps 5 iterations 800 momentum 0.9
+Run 0
+final val_loss: 1.344626251734169
+final train_loss: 1.3112566270881763
+final val_F1: 0.23370635572743872
+final train_F1: 0.2487464251503327
+final val_auc: 0.6225267379679144
+final train_auc: 0.6684145569620253
+final val_acc: 0.4589844048023224
+final train_acc: 0.4883427023887634
+
+Training lr 0.001 steps 5 iterations 800 momentum 0.99
+Run 0
+final val_loss: 1.3361003018761606
+final train_loss: 1.2995177379481415
+final val_F1: 0.2373904790631936
+final train_F1: 0.26214577727130306
+final val_auc: 0.6279745989304815
+final train_auc: 0.6746884669479607
+final val_acc: 0.5055338740348816
+final train_acc: 0.5342696309089661
+
+Training lr 0.001 steps 20 iterations 200 momentum 0.0
+Run 0
+final val_loss: 1.3609551261681843
+final train_loss: 1.37256609432866
+final val_F1: 0.22142500792987432
+final train_F1: 0.21726714613971204
+final val_auc: 0.5976437165775401
+final train_auc: 0.5839627285513361
+final val_acc: 0.4602864980697632
+final train_acc: 0.45079588890075684
+
+Training lr 0.001 steps 20 iterations 200 momentum 0.9
+Run 0
+final val_loss: 1.3332943533035562
+final train_loss: 1.2747150504084421
+final val_F1: 0.24271496846035817
+final train_F1: 0.2690460740531547
+final val_auc: 0.6375167112299465
+final train_auc: 0.6989954289732772
+final val_acc: 0.5055338740348816
+final train_acc: 0.5406835675239563
+
+Training lr 0.001 steps 20 iterations 200 momentum 0.99
+Run 0
+final val_loss: 1.2843247851487551
+final train_loss: 1.2632808341820647
+final val_F1: 0.26938529216342555
+final train_F1: 0.2750310694799092
+final val_auc: 0.6906082887700535
+final train_auc: 0.7080010548523206
+final val_acc: 0.5419921875
+final train_acc: 0.5631086230278015
+
+Training lr 0.001 steps 80 iterations 50 momentum 0.0
+Run 0
+final val_loss: 1.3782781802580826
+final train_loss: 1.3685683467080052
+final val_F1: 0.20651984114408672
+final train_F1: 0.2107581921871784
+final val_auc: 0.5653409090909091
+final train_auc: 0.5828959212376934
+final val_acc: 0.4619140923023224
+final train_acc: 0.46367043256759644
+
+Training lr 0.001 steps 80 iterations 50 momentum 0.9
+Run 0
+final val_loss: 1.3034178508259855
+final train_loss: 1.2530195105744684
+final val_F1: 0.2638115847826569
+final train_F1: 0.2812465695359367
+final val_auc: 0.6794117647058823
+final train_auc: 0.7136656118143461
+final val_acc: 0.5305989980697632
+final train_acc: 0.5658239126205444
+
+Training lr 0.001 steps 80 iterations 50 momentum 0.99
+Run 0
+final val_loss: 1.3345394834554036
+final train_loss: 1.2542265080101787
+final val_F1: 0.26890456701170823
+final train_F1: 0.2864366403407853
+final val_auc: 0.6557486631016042
+final train_auc: 0.7111167369901545
+final val_acc: 0.57421875
+final train_acc: 0.5881086587905884
+
+The following parameters failed:

@@ -21,9 +21,10 @@ class LSR_tensor_dot(torch.nn.Module):
     def init_params(self, initialize=True):
         # Initialize core tensor as independent standard gaussians
         if not initialize:
-            self.core_tensor = torch.zeros(self.ranks)
+            self.core_tensor = torch.nn.parameter.Parameter(torch.zeros(self.ranks, device=self.device))
         else:
-            self.core_tensor = torch.nn.parameter.Parameter(torch.normal(0, 1, size=self.ranks, dtype=self.dtype, device=self.device))
+            width = 1
+            self.core_tensor = torch.nn.parameter.Parameter(width * torch.rand(size=self.ranks, dtype=self.dtype, device=self.device) - width / 2)
 
         self.factor_matrices = torch.nn.ModuleList()
 
@@ -34,14 +35,14 @@ class LSR_tensor_dot(torch.nn.Module):
             for k in range(self.order):
                 if not initialize:
                     factor_matrix_B = torch.eye(self.shape[k])[:, self.ranks[k]]
-                    factors_s.append(factor_matrix_B)
+                    factors_s.append(torch.nn.parameter.Parameter(factor_matrix_B))
                 else:
                     factor_matrix_A = torch.normal(torch.zeros((self.shape[k], self.ranks[k]), dtype=self.dtype, device=self.device),\
                                                    torch.ones((self.shape[k], self.ranks[k]), dtype=self.dtype, device=self.device))
 
                     # Orthonormalize matrix
-                    factor_matrix_B = torch.linalg.qr(factor_matrix_A)
-                    factors_s.append(factor_matrix_B[0])
+                    factor_matrix_B = torch.nn.parameter.Parameter(torch.linalg.qr(factor_matrix_A)[0])
+                    factors_s.append(factor_matrix_B)
 
             self.factor_matrices.append(factors_s)
 
@@ -55,9 +56,9 @@ class LSR_tensor_dot(torch.nn.Module):
         new_tensor = cls(old_tensor.shape, old_tensor.ranks, old_tensor.separation_rank, old_tensor.dtype, device, initialize=False)
         for s in range(old_tensor.separation_rank):
             for k in range(len(old_tensor.ranks)):
-                new_tensor.factor_matrices[s][k] = torch.clone(old_tensor.factor_matrices[s][k]).to(device)
+                new_tensor.factor_matrices[s][k] = torch.nn.parameter.Parameter(torch.clone(old_tensor.factor_matrices[s][k]).to(device))
 
-        new_tensor.core_tensor = torch.nn.Parameter(torch.clone(old_tensor.core_tensor).to(device))
+        new_tensor.core_tensor = torch.nn.parameter.Parameter(torch.clone(old_tensor.core_tensor).to(device))
         return new_tensor
 
     # Expand core tensor and factor matrices to full tensor, optionally excluding

@@ -1,0 +1,82 @@
+---STARTING---
+training | samples: 0.7, clients: 2
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 1
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Saving to ../data/vessel_final/local_70_2
+Saving to ../data/vessel_final/centralized_70_2
+Saving to ../data/vessel_final/step_70_2
+Saving to ../data/vessel_final/factors_core_70_2
+Saving to ../data/vessel_final/one_iter_70_2
+Saving to ../data/vessel_final/five_iter_70_2
+FINISHED PERCENT 70.0 CLIENTS 2
+training | samples: 0.7, clients: 4
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+slurmstepd: error: NVML: Failed to get Compute running procs(7): Insufficient Size
+Run 1
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Saving to ../data/vessel_final/local_70_4
+Saving to ../data/vessel_final/centralized_70_4
+Saving to ../data/vessel_final/step_70_4
+Saving to ../data/vessel_final/factors_core_70_4
+Saving to ../data/vessel_final/one_iter_70_4
+Saving to ../data/vessel_final/five_iter_70_4
+FINISHED PERCENT 70.0 CLIENTS 4
+training | samples: 0.7, clients: 6
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/pool.py", line 51, in starmapstar
+    return list(itertools.starmap(args[0], args[1]))
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/federated_tests.py", line 42, in run_method_trial
+    final_lsr_dot, perf_info = method(init_tensor_dot, data, *args)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/lsr_bcd_regression.py", line 137, in BCD_avg_local
+    final_tensor, perf_info = lsr_bcd_regression(LSR_tensor_dot.copy(lsr_ten), (client_dataset, val_dataset, client_datasets), hypers, loss_func, accuracy, verbose, optimize, true_param, adam)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/lsr_bcd_regression.py", line 114, in lsr_bcd_regression
+    perf_info = update_perf_info(perf_info, lsr_ten, dataloader, val_dataloader, accuracy)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/federated_algos.py", line 187, in update_perf_info
+    val_acc, val_F1, val_auc = get_full_log_metrics(lsr_tensor, val_dataloader)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
+    return func(*args, **kwargs)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/federated_algos.py", line 154, in get_full_log_metrics
+    roc_auc = sklearn.metrics.roc_auc_score(y.cpu(), y_score.cpu())
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/sklearn/utils/_param_validation.py", line 211, in wrapper
+    return func(*args, **kwargs)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/sklearn/metrics/_ranking.py", line 605, in roc_auc_score
+    y_score = check_array(y_score, ensure_2d=False)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/sklearn/utils/validation.py", line 959, in check_array
+    _assert_all_finite(
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/sklearn/utils/validation.py", line 124, in _assert_all_finite
+    _assert_all_finite_element_wise(
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/mlenv/lib/python3.8/site-packages/sklearn/utils/validation.py", line 173, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input contains NaN.
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "vessel_test.py", line 56, in <module>
+    run_vessel_combined(path_base, n_runs, n_trials, n_workers, samples, clients, lsr_dot_params, sized_names, methods, arg_list)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/federated_tests.py", line 140, in run_vessel_combined
+    run_combined_test(path, n_runs, n_trials, n_workers, data_fn, tensor_params, names, methods, arg_list,  verbose=True, save_weights=False)
+  File "/common/users/rp1110/fishcat/Federated-LSRTR/federated_tests.py", line 75, in run_combined_test
+    method_results.extend(pool.starmap(run_method_trial, trial_args))
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/pool.py", line 372, in starmap
+    return self._map_async(func, iterable, starmapstar, chunksize).get()
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/pool.py", line 771, in get
+    raise self._value
+ValueError: Input contains NaN.

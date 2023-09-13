@@ -1,6 +1,14 @@
+import sklearn
 import torch
 import sys
 from lsr_tensor import *
+import torch.nn.functional as f
+
+def logistic_loss(y_pred, y):
+    y_pred = torch.sigmoid(y_pred)
+    pos_prop = torch.sum(y) / len(y)
+
+    return torch.mean(-1 * ((1/pos_prop)*y*torch.log(y_pred) + (1/ (1 - pos_prop))*(1-y)*torch.log(1-y_pred)))
 
 def client_update_core(tensor, dataloader, optim_fn, loss_fn, steps):
     optimizer = optim_fn(tensor.parameters())
@@ -124,8 +132,9 @@ def get_full_loss(lsr_tensor, dataloader, loss_fn):
     return loss.cpu()
 
 @torch.no_grad()
-def get_full_accuracy(lsr_tensor, dataloader):
+def get_full_log_metrics(lsr_tensor, dataloader, sig=True):
     acc = 0 
+
     for X, y in dataloader:
         X = X.to(lsr_tensor.device)
         y = y.to(lsr_tensor.device)
@@ -133,29 +142,81 @@ def get_full_accuracy(lsr_tensor, dataloader):
         X = torch.squeeze(X)
         y = torch.squeeze(y)
         
-        y_predicted = lsr_tensor.forward(X) > 0.5
+        if sig:
+            y_score = torch.sigmoid(lsr_tensor.forward(X))
+        else:
+            y_score = torch.clamp(y_score, 0.0, 1.0)
+
+        y_predicted = y_score > 0.5
+
+        # only makes sense for full GD, not batch. fix later
+        precision, recall, f1, _ = sklearn.metrics.precision_recall_fscore_support(y.cpu(), y_predicted.cpu(), average='binary', zero_division=0.0)
+        roc_auc = sklearn.metrics.roc_auc_score(y.cpu(), y_score.cpu())
+
         acc += torch.sum(y_predicted == y)
+
     if isinstance(dataloader, torch.utils.data.DataLoader):
         acc = acc / len(dataloader.dataset)
     else:
         acc = acc / len(dataloader[0][0])
-    return acc.cpu()
+    return acc.cpu(), torch.tensor(f1), torch.tensor(roc_auc)
+
+
+def init_perf_info(logistic=False):
+    perf_info = {"val_loss": [], "train_loss": []}
+
+    if logistic:
+        perf_info.update({"val_F1": [], "train_F1": [],\
+                          "val_auc": [], "train_auc": [],\
+                          "val_acc": [], "train_acc": []})
+
+    return perf_info
+
+@torch.no_grad()
+def update_perf_info(perf_info, lsr_tensor, train_dataloader, val_dataloader, logistic=False):
+    # bad, fix later
+    if logistic:
+        loss_fn = logistic_loss
+    else:
+        loss_fn = f.mse_loss
+
+    perf_info["val_loss"].append(get_full_loss(lsr_tensor, val_dataloader, loss_fn))
+    perf_info["train_loss"].append(get_full_loss(lsr_tensor, train_dataloader, loss_fn))
+
+    if logistic:
+        val_acc, val_F1, val_auc = get_full_log_metrics(lsr_tensor, val_dataloader)
+        train_acc, train_F1, train_auc = get_full_log_metrics(lsr_tensor, train_dataloader)
+
+        perf_info["val_acc"].append(val_acc)
+        perf_info["train_acc"].append(train_acc)
+
+        perf_info["val_F1"].append(val_F1)
+        perf_info["train_F1"].append(train_F1)
+
+        perf_info["val_auc"].append(val_auc)
+        perf_info["train_auc"].append(train_auc)
+
+    return perf_info
+
+def stack_perf_info(perf_info):
+    for key in perf_info:
+        perf_info[key] = torch.stack(perf_info[key])
+
+    return perf_info
 
 def BCD_federated_stepwise(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
-    _, val_dataset, client_datasets = data
+    train_dataset, val_dataset, client_datasets = data
 
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
-    train_losses, val_losses = [], []
-    train_accs, val_accs = [], []
-    perf_info = {}
+    perf_info = init_perf_info(accuracy)
 
-    val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
+    batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(train_dataset)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=len(val_dataset), pin_memory=True, shuffle=False)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders, client_sizes = get_client_dataloaders(client_datasets, hypers["batch_size"], lsr_tensor.device)
-    train_data_size = sum(client_sizes)
 
     for iteration in range(hypers["max_iter"]):
         for s in range(separation_rank):
@@ -178,37 +239,26 @@ def BCD_federated_stepwise(lsr_tensor, data, hypers, loss_fn, aggregator_fn, acc
             client_outputs.append(client_out)
 
         lsr_tensor.core_tensor = avg_aggregation(client_outputs)
-
-        val_losses.append(get_full_loss(lsr_tensor, val_dataloader, loss_fn))
-        train_losses.append(sum([get_full_loss(lsr_tensor, c_data, loss_fn) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
-
-        if accuracy:
-            val_accs.append(get_full_accuracy(lsr_tensor, val_dataloader))
-            train_accs.append(sum([get_full_accuracy(lsr_tensor, c_data) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
+        perf_info = update_perf_info(perf_info, lsr_tensor, train_dataloader, val_dataloader, accuracy)
 
         if verbose:
             print(f"Iteration {iteration} | Validation Loss: {val_losses[-1]}")
 
-    perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    if accuracy:
-        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
-
+    perf_info = stack_perf_info(perf_info)
     return lsr_tensor, perf_info
 
 def BCD_federated_all_factors(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False, ortho_iteratively=True):
-    _, val_dataset, client_datasets = data
+    train_dataset, val_dataset, client_datasets = data
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
-    train_losses, val_losses = [], []
-    train_accs, val_accs = [], []
-    perf_info = {}
+    perf_info = init_perf_info(accuracy)
 
-    val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
+    batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(train_dataset)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=len(val_dataset), pin_memory=True, shuffle=False)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders, client_sizes = get_client_dataloaders(client_datasets, hypers["batch_size"], lsr_tensor.device)
-    train_data_size = sum(client_sizes)
 
     for iteration in range(hypers["max_iter"]):
         client_outputs = []
@@ -230,35 +280,25 @@ def BCD_federated_all_factors(lsr_tensor, data, hypers, loss_fn, aggregator_fn, 
             client_outputs.append(client_out)
 
         lsr_tensor.core_tensor = avg_aggregation(client_outputs)
-
-        val_losses.append(get_full_loss(lsr_tensor, val_dataloader, loss_fn))
-        train_losses.append(sum([get_full_loss(lsr_tensor, c_data, loss_fn) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
-
-        if accuracy:
-            val_accs.append(get_full_accuracy(lsr_tensor, val_dataloader))
-            train_accs.append(sum([get_full_accuracy(lsr_tensor, c_data) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
+        perf_info = update_perf_info(perf_info, lsr_tensor, train_dataloader, val_dataloader, accuracy)
 
         if verbose:
             print(f"Iteration {iteration} | Validation Loss: {val_losses[-1]}")
 
-    perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    if accuracy:
-        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
-
+    perf_info = stack_perf_info(perf_info)
     return lsr_tensor, perf_info
 
 def BCD_federated_full_iteration(lsr_tensor, data, hypers, loss_fn, aggregator_fn, accuracy=False, verbose=False):
-    _, val_dataset, client_datasets = data
+    train_dataset, val_dataset, client_datasets = data
 
     shape, ranks, separation_rank, order = lsr_tensor.shape, lsr_tensor.ranks, lsr_tensor.separation_rank, lsr_tensor.order
     optim_fn = lambda params: torch.optim.SGD(params, lr=hypers["lr"], momentum=hypers["momentum"])
 
-    train_losses, val_losses = [], []
-    train_accs, val_accs = [], []
-    perf_info = {}
+    perf_info = init_perf_info(accuracy)
 
-    val_batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(val_dataset)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=val_batch_size, pin_memory=True, shuffle=False)
+    batch_size = hypers["batch_size"] if hypers["batch_size"] is not None else len(train_dataset)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=len(val_dataset), pin_memory=True, shuffle=False)
+    train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False)
 
     client_dataloaders, client_sizes = get_client_dataloaders(client_datasets, hypers["batch_size"], lsr_tensor.device)
     train_data_size = sum(client_sizes)
@@ -278,20 +318,11 @@ def BCD_federated_full_iteration(lsr_tensor, data, hypers, loss_fn, aggregator_f
 
         client_cores = [client.core_tensor for client in client_outputs]
         lsr_tensor.core_tensor = avg_aggregation(client_cores)
-
-        val_losses.append(get_full_loss(lsr_tensor, val_dataloader, loss_fn))
-        train_losses.append(sum([get_full_loss(lsr_tensor, c_data, loss_fn) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
-
-        if accuracy:
-            val_accs.append(get_full_accuracy(lsr_tensor, val_dataloader))
-            train_accs.append(sum([get_full_accuracy(lsr_tensor, c_data) * c_size for c_data, c_size in zip(client_dataloaders, client_sizes)]) / train_data_size)
+        perf_info = update_perf_info(perf_info, lsr_tensor, train_dataloader, val_dataloader, accuracy)
 
         if verbose:
             print(f"Round {comm_round} | Validation Loss: {val_losses[-1]}")
 
-    perf_info["val_loss"], perf_info["train_loss"] = torch.stack(val_losses), torch.stack(train_losses)
-    if accuracy:
-        perf_info["val_acc"], perf_info["train_acc"] = torch.stack(val_accs), torch.stack(train_accs)
-
+    perf_info = stack_perf_info(perf_info)
     return lsr_tensor, perf_info
 

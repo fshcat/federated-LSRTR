@@ -1,0 +1,77 @@
+---STARTING---
+training | samples: 1.0, clients: 6
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 1
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Exception ignored in: <Finalize object, dead>
+Traceback (most recent call last):
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/util.py", line 224, in __call__
+    res = self._callback(*self._args, **self._kwargs)
+  File "/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/synchronize.py", line 87, in _cleanup
+    sem_unlink(name)
+FileNotFoundError: [Errno 2] No such file or directory
+Run 2
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 3
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Saving to ../data/vessel_final_1/local_100_6
+Saving to ../data/vessel_final_1/centralized_100_6
+Saving to ../data/vessel_final_1/step_100_6
+Saving to ../data/vessel_final_1/factors_core_100_6
+Saving to ../data/vessel_final_1/one_iter_100_6
+Saving to ../data/vessel_final_1/five_iter_100_6
+FINISHED PERCENT 100.0 CLIENTS 6
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:216: UserWarning: resource_tracker: There appear to be 6 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-z9pc_t5r': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-453ll_pf': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-3dbndz8p': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-csrnk7bv': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-nfh663ns': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
+/common/system/anaconda/envs/python38/lib/python3.8/multiprocessing/resource_tracker.py:229: UserWarning: resource_tracker: '/loky-3650299-ghd4a6k0': [Errno 2] No such file or directory
+  warnings.warn('resource_tracker: %r: %s' % (name, e))
