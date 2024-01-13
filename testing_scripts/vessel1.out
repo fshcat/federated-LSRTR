@@ -1,0 +1,41 @@
+
+Ubuntu 22.04.3 LTS5.15.0-78-generic
+----------------------------------------------------------------------------
+Machine Name:  	ilab4.cs          IP No:       128.6.13.5 2620:0:d60:ac0d::5
+Sat Jan 13 12:39:56 AM EST 2024	  Uptime:        	        1 days 08:03
+----------------------------------------------------------------------------
+Processes:     	1172              Local/SSH/X2Go/XRDP/VSCODE:	0/3/0/1/0           
+HostProxy:     	2                 TMUX/SCREEN/JUPYTER:	1/0/0
+Connections:   	17                Load/Total Users:	2/7
+Free Memory:   	950Gi of 1.0Ti    Free Swap:     	511Gi of 511Gi
+----------------------------------------------------------------------------
+CPU Info:      	AMD EPYC 7352 24-Core Processor - 96 cores 
+System CPU:    	0.09%             User CPU:      	0.14%
+CPU Idle:      	99.77%            IO Wait:       	0.00%
+----------------------------------------------------------------------------
+Login as:      	rp1110            No. of Sessions:	0
+Avail.UserDisk:	                  Avail.Freespace:	5917.41 GB
+CUDA Driver:   	11.8              CUDA Cores:    	6144
+----------------------------------------------------------------------------
+
+---STARTING---
+training | samples: 1.0, clients: 6
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 1
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 2
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Run 3
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Saving to ../data/vessel_final_part1/local_100_6
+Saving to ../data/vessel_final_part1/centralized_100_6
+Saving to ../data/vessel_final_part1/step_100_6
+Saving to ../data/vessel_final_part1/factors_core_100_6
+Saving to ../data/vessel_final_part1/one_iter_100_6
+Saving to ../data/vessel_final_part1/five_iter_100_6
+FINISHED PERCENT 100.0 CLIENTS 6

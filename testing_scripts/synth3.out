@@ -1,0 +1,33 @@
+
+Ubuntu 22.04.3 LTS5.15.0-78-generic
+----------------------------------------------------------------------------
+Machine Name:  	ilab4.cs          IP No:       128.6.13.5 2620:0:d60:ac0d::5
+Thu Jan 11 05:17:31 PM EST 2024	  Uptime:        	        0 days 00:41
+----------------------------------------------------------------------------
+Processes:     	1102              Local/SSH/X2Go/XRDP/VSCODE:	0/0/0/1/0           
+HostProxy:     	0                 TMUX/SCREEN/JUPYTER:	0/0/0
+Connections:   	7                 Load/Total Users:	1/1
+Free Memory:   	961Gi of 1.0Ti    Free Swap:     	511Gi of 511Gi
+----------------------------------------------------------------------------
+CPU Info:      	AMD EPYC 7352 24-Core Processor - 96 cores 
+System CPU:    	0.15%             User CPU:      	1.28%
+CPU Idle:      	98.57%            IO Wait:       	0.00%
+----------------------------------------------------------------------------
+Login as:      	rp1110            No. of Sessions:	0
+Avail.UserDisk:	                  Avail.Freespace:	5917.41 GB
+CUDA Driver:   	11.8              CUDA Cores:    	3072
+----------------------------------------------------------------------------
+
+---STARTING---
+training | samples: 100, clients: 8
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_100_8
+Saving to ../data/synth_final/centralized_100_8
+Saving to ../data/synth_final/step_100_8
+Saving to ../data/synth_final/factors_core_100_8
+Saving to ../data/synth_final/one_iter_100_8
+Saving to ../data/synth_final/five_iter_100_8
+FINISHED SIZE 100 CLIENTS 8

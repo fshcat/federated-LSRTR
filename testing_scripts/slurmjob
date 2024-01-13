@@ -1,0 +1,6 @@
+#!/bin/bash -l
+#SBATCH --output=vessel2.out
+
+cd /common/users/rp1110/fishcat/Federated-LSRTR/testing_scripts
+source ../mlenv/bin/activate
+python3 vessel_test.py

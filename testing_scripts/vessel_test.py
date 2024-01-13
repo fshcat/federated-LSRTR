@@ -19,13 +19,13 @@ if __name__ == "__main__":
     site_sizes = [1.0]
     client_nums = [6]
 
-    iters = 400
+    iters = 200
 
     n_runs = 4
     n_trials = 8
     n_workers = 8
 
-    path_base = "../data/vessel_final_2"
+    path_base = "../data/vessel_final_part2"
         
     methods = [BCD_avg_local, lsr_bcd_regression, BCD_federated_stepwise, BCD_federated_all_factors, BCD_federated_full_iteration, BCD_federated_full_iteration]
     names = ['local', 'centralized', 'step', 'factors_core', 'one_iter', 'five_iter']

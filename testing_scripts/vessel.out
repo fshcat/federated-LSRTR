@@ -1,0 +1,27 @@
+
+Ubuntu 22.04.3 LTS5.15.0-78-generic
+----------------------------------------------------------------------------
+Machine Name:  	ilab4.cs          IP No:       128.6.13.5 2620:0:d60:ac0d::5
+Sat Jan 13 12:38:44 AM EST 2024	  Uptime:        	        1 days 08:02
+----------------------------------------------------------------------------
+Processes:     	1177              Local/SSH/X2Go/XRDP/VSCODE:	0/3/0/1/0           
+HostProxy:     	2                 TMUX/SCREEN/JUPYTER:	1/0/0
+Connections:   	16                Load/Total Users:	0/7
+Free Memory:   	937Gi of 1.0Ti    Free Swap:     	511Gi of 511Gi
+----------------------------------------------------------------------------
+CPU Info:      	AMD EPYC 7352 24-Core Processor - 96 cores 
+System CPU:    	1.97%             User CPU:      	6.63%
+CPU Idle:      	91.39%            IO Wait:       	0.01%
+----------------------------------------------------------------------------
+Login as:      	rp1110            No. of Sessions:	0
+Avail.UserDisk:	                  Avail.Freespace:	5917.41 GB
+CUDA Driver:   	11.8              CUDA Cores:    	6144
+----------------------------------------------------------------------------
+
+---STARTING---
+training | samples: 1.0, clients: 6
+Run 0
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+Using downloaded and verified file: /common/home/rp1110/.medmnist/vesselmnist3d.npz
+slurmstepd: error: *** JOB 31381 ON ilab4 CANCELLED AT 2024-01-13T00:39:24 ***
+slurmstepd: error: *** JOB 31382 ON ilab4 CANCELLED AT 2024-01-13T00:39:32 ***

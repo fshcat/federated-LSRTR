@@ -1,0 +1,120 @@
+
+Ubuntu 22.04.3 LTS5.15.0-91-generic
+----------------------------------------------------------------------------
+Machine Name:  	ilab4.cs          IP No:       128.6.13.5 2620:0:d60:ac0d::5
+Thu Jan 11 04:54:56 AM EST 2024	  Uptime:        	        0 days 14:53
+----------------------------------------------------------------------------
+Processes:     	1075              Local/SSH/X2Go/XRDP/VSCODE:	0/0/0/0/0           
+HostProxy:     	0                 TMUX/SCREEN/JUPYTER:	0/0/0
+Connections:   	5                 Load/Total Users:	9/0
+Free Memory:   	924Gi of 1.0Ti    Free Swap:     	511Gi of 511Gi
+----------------------------------------------------------------------------
+CPU Info:      	AMD EPYC 7352 24-Core Processor - 96 cores 
+System CPU:    	0.79%             User CPU:      	78.54%
+CPU Idle:      	20.67%            IO Wait:       	0.00%
+----------------------------------------------------------------------------
+Login as:      	rp1110            No. of Sessions:	0
+Avail.UserDisk:	                  Avail.Freespace:	5917.41 GB
+CUDA Driver:   	11.8              CUDA Cores:    	9216
+----------------------------------------------------------------------------
+
+---STARTING---
+training | samples: 700, clients: 2
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_700_2
+Saving to ../data/synth_final/centralized_700_2
+Saving to ../data/synth_final/step_700_2
+Saving to ../data/synth_final/factors_core_700_2
+Saving to ../data/synth_final/one_iter_700_2
+Saving to ../data/synth_final/five_iter_700_2
+FINISHED SIZE 700 CLIENTS 2
+training | samples: 700, clients: 4
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_700_4
+Saving to ../data/synth_final/centralized_700_4
+Saving to ../data/synth_final/step_700_4
+Saving to ../data/synth_final/factors_core_700_4
+Saving to ../data/synth_final/one_iter_700_4
+Saving to ../data/synth_final/five_iter_700_4
+FINISHED SIZE 700 CLIENTS 4
+training | samples: 700, clients: 6
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_700_6
+Saving to ../data/synth_final/centralized_700_6
+Saving to ../data/synth_final/step_700_6
+Saving to ../data/synth_final/factors_core_700_6
+Saving to ../data/synth_final/one_iter_700_6
+Saving to ../data/synth_final/five_iter_700_6
+FINISHED SIZE 700 CLIENTS 6
+training | samples: 700, clients: 8
+Run 0
+Run 1
+Run 2
+slurmstepd: error: NVML: Failed to get Compute running procs(7): Insufficient Size
+Run 3
+Saving to ../data/synth_final/local_700_8
+Saving to ../data/synth_final/centralized_700_8
+Saving to ../data/synth_final/step_700_8
+Saving to ../data/synth_final/factors_core_700_8
+Saving to ../data/synth_final/one_iter_700_8
+Saving to ../data/synth_final/five_iter_700_8
+FINISHED SIZE 700 CLIENTS 8
+training | samples: 200, clients: 2
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_200_2
+Saving to ../data/synth_final/centralized_200_2
+Saving to ../data/synth_final/step_200_2
+Saving to ../data/synth_final/factors_core_200_2
+Saving to ../data/synth_final/one_iter_200_2
+Saving to ../data/synth_final/five_iter_200_2
+FINISHED SIZE 200 CLIENTS 2
+training | samples: 200, clients: 4
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_200_4
+Saving to ../data/synth_final/centralized_200_4
+Saving to ../data/synth_final/step_200_4
+Saving to ../data/synth_final/factors_core_200_4
+Saving to ../data/synth_final/one_iter_200_4
+Saving to ../data/synth_final/five_iter_200_4
+FINISHED SIZE 200 CLIENTS 4
+training | samples: 200, clients: 6
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_200_6
+Saving to ../data/synth_final/centralized_200_6
+Saving to ../data/synth_final/step_200_6
+Saving to ../data/synth_final/factors_core_200_6
+Saving to ../data/synth_final/one_iter_200_6
+Saving to ../data/synth_final/five_iter_200_6
+FINISHED SIZE 200 CLIENTS 6
+training | samples: 200, clients: 8
+Run 0
+slurmstepd: error: NVML: Failed to get Compute running procs(7): Insufficient Size
+Run 1
+slurmstepd: error: NVML: Failed to get Compute running procs(7): Insufficient Size
+Run 2
+Run 3
+Saving to ../data/synth_final/local_200_8
+Saving to ../data/synth_final/centralized_200_8
+Saving to ../data/synth_final/step_200_8
+Saving to ../data/synth_final/factors_core_200_8
+Saving to ../data/synth_final/one_iter_200_8
+Saving to ../data/synth_final/five_iter_200_8
+FINISHED SIZE 200 CLIENTS 8

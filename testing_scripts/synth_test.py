@@ -16,14 +16,14 @@ if __name__ == "__main__":
     loss_fn = f.mse_loss
     aggregator_fn = avg_aggregation
 
-    site_sizes = [100, 200, 300, 400, 500, 700, 1000]
-    client_nums = [2, 4, 6, 8]
+    site_sizes = [int(sys.argv[i]) for i in range(1,len(sys.argv))]
+    client_nums = [8]
 
     iters = 200
 
-    n_runs = 2
+    n_runs = 4
     n_trials = 16
-    n_workers = 16
+    n_workers = 8
 
     path_base = "../data/synth_final"
         

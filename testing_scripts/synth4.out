@@ -1,0 +1,70 @@
+
+Ubuntu 22.04.3 LTS5.15.0-91-generic
+----------------------------------------------------------------------------
+Machine Name:  	ilab3.cs          IP No:       128.6.13.4 2620:0:d60:ac0d::4
+Thu Jan 11 04:55:45 AM EST 2024	  Uptime:        	        0 days 14:54
+----------------------------------------------------------------------------
+Processes:     	1072              Local/SSH/X2Go/XRDP/VSCODE:	0/1/0/0/1           
+HostProxy:     	1                 TMUX/SCREEN/JUPYTER:	0/0/0
+Connections:   	12                Load/Total Users:	1/3
+Free Memory:   	661Gi of 755Gi    Free Swap:     	511Gi of 511Gi
+----------------------------------------------------------------------------
+CPU Info:      	AMD EPYC 7352 24-Core Processor - 96 cores 
+System CPU:    	0.08%             User CPU:      	1.13%
+CPU Idle:      	98.79%            IO Wait:       	0.00%
+----------------------------------------------------------------------------
+Login as:      	rp1110            No. of Sessions:	0
+Avail.UserDisk:	                  Avail.Freespace:	5594.26 GB
+CUDA Driver:   	11.8              CUDA Cores:    	3584
+----------------------------------------------------------------------------
+
+---STARTING---
+training | samples: 400, clients: 2
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_400_2
+Saving to ../data/synth_final/centralized_400_2
+Saving to ../data/synth_final/step_400_2
+Saving to ../data/synth_final/factors_core_400_2
+Saving to ../data/synth_final/one_iter_400_2
+Saving to ../data/synth_final/five_iter_400_2
+FINISHED SIZE 400 CLIENTS 2
+training | samples: 400, clients: 4
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_400_4
+Saving to ../data/synth_final/centralized_400_4
+Saving to ../data/synth_final/step_400_4
+Saving to ../data/synth_final/factors_core_400_4
+Saving to ../data/synth_final/one_iter_400_4
+Saving to ../data/synth_final/five_iter_400_4
+FINISHED SIZE 400 CLIENTS 4
+training | samples: 400, clients: 6
+Run 0
+slurmstepd: error: NVML: Failed to get Compute running procs(7): Insufficient Size
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_400_6
+Saving to ../data/synth_final/centralized_400_6
+Saving to ../data/synth_final/step_400_6
+Saving to ../data/synth_final/factors_core_400_6
+Saving to ../data/synth_final/one_iter_400_6
+Saving to ../data/synth_final/five_iter_400_6
+FINISHED SIZE 400 CLIENTS 6
+training | samples: 400, clients: 8
+Run 0
+Run 1
+Run 2
+Run 3
+Saving to ../data/synth_final/local_400_8
+Saving to ../data/synth_final/centralized_400_8
+Saving to ../data/synth_final/step_400_8
+Saving to ../data/synth_final/factors_core_400_8
+Saving to ../data/synth_final/one_iter_400_8
+Saving to ../data/synth_final/five_iter_400_8
+FINISHED SIZE 400 CLIENTS 8
